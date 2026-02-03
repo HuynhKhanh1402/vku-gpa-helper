@@ -5,6 +5,7 @@ import { calculateOverallGpa } from './utils/gpaCalculator';
 import UploadArea from './components/UploadArea';
 import SemesterCard from './components/SemesterCard';
 import GpaSummary from './components/GpaSummary';
+import vkuLogo from '/vku.svg';
 import './App.css';
 
 function App() {
@@ -193,7 +194,7 @@ function App() {
           className="flex items-center gap-4 text-text-main hover:opacity-80 transition-opacity cursor-pointer"
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-xl">
-            <img src="/vku.svg" alt="VKU Logo" className="w-12 h-12" />
+            <img src={vkuLogo} alt="VKU Logo" className="w-12 h-12" />
           </div>
           <div className="text-left">
             <h2 className="text-xl font-bold leading-tight tracking-tight text-text-main">VKU GPA Helper</h2>
