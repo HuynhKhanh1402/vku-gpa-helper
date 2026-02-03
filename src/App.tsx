@@ -56,6 +56,8 @@ function App() {
           included: edit.newIncluded,
           // If a grade has been set (not empty), mark hasGrade as true
           hasGrade: edit.newLetterGrade !== '' ? true : course.hasGrade,
+          // Preserve isRetakeDisabled flag
+          isRetakeDisabled: course.isRetakeDisabled,
         };
       }),
     }));
@@ -170,7 +172,10 @@ function App() {
     if (!semester) return;
 
     semester.courses.forEach(course => {
-      handleIncludeChange(course.id, selected);
+      // Don't modify retake-disabled courses
+      if (!course.isRetakeDisabled) {
+        handleIncludeChange(course.id, selected);
+      }
     });
   }, [parsedData, handleIncludeChange]);
 

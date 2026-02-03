@@ -38,6 +38,9 @@ export default function CourseRow({
 
   // Determine row styling based on state
   const rowClassName = useMemo(() => {
+    if (course.isRetakeDisabled) {
+      return 'opacity-40 bg-gray-100/50';
+    }
     if (!course.hasGrade) {
       return 'opacity-60 bg-gray-50';
     }
@@ -51,7 +54,7 @@ export default function CourseRow({
       return 'bg-red-50/30 hover:bg-red-50/50 transition-colors border-l-4 border-l-transparent';
     }
     return 'hover:bg-gray-50 transition-colors border-l-4 border-l-transparent';
-  }, [course.hasGrade, hasEdit, showRetakeBadge, course.included]);
+  }, [course.hasGrade, hasEdit, showRetakeBadge, course.included, course.isRetakeDisabled]);
 
   return (
     <tr className={rowClassName}>
@@ -63,8 +66,13 @@ export default function CourseRow({
       {/* Tên học phần */}
       <td className="px-6 py-4 font-medium text-text-main">
         <div className="flex flex-col gap-1">
-          <span>{course.name}</span>
-          {showRetakeBadge && course.hasGrade && (
+          <span className={course.isRetakeDisabled ? 'line-through opacity-60' : ''}>{course.name}</span>
+          {course.isRetakeDisabled && (
+            <span className="inline-flex w-fit items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+              Đã học lại (điểm thấp hơn)
+            </span>
+          )}
+          {showRetakeBadge && course.hasGrade && !course.isRetakeDisabled && (
             <span className="inline-flex w-fit items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
               Nên học lại
             </span>
@@ -121,7 +129,7 @@ export default function CourseRow({
             type="checkbox"
             checked={course.included}
             onChange={handleIncludeChange}
-            disabled={!course.hasGrade && !hasEdit}
+            disabled={course.isRetakeDisabled || (!course.hasGrade && !hasEdit)}
             className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             aria-label={`Tính ${course.name} vào GPA`}
           />
@@ -134,11 +142,12 @@ export default function CourseRow({
           <select
             value={hasEdit ? course.letterGrade : (course.hasGrade ? 'original' : '')}
             onChange={handleGradeChange}
+            disabled={course.isRetakeDisabled}
             className={`block w-full rounded-md py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset focus:ring-2 sm:text-sm sm:leading-6 ${
               hasEdit 
                 ? 'border-primary text-primary font-medium ring-primary focus:ring-primary' 
                 : 'border-0 ring-gray-300 focus:ring-primary'
-            }`}
+            } disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50`}
             aria-label={`Thay đổi điểm cho ${course.name}`}
           >
             {course.hasGrade && (

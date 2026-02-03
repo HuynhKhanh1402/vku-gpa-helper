@@ -23,7 +23,7 @@ export function parseVkuHtml(htmlContent: string): ParsedData {
     if (semesterHeader) {
       const semesterText = semesterHeader.textContent?.trim() || '';
       
-      // Filter out "Học kỳ riêng - Quy đổi" (transferred/recognized courses)
+      // Filter out transferred/recognized courses ("Học kỳ riêng - Quy đổi")
       if (semesterText.includes('Quy đổi') || semesterText.includes('riêng')) {
         currentSemester = null;
         return;
@@ -80,6 +80,9 @@ export function parseVkuHtml(htmlContent: string): ParsedData {
     throw new Error('Không tìm thấy bảng điểm trong tập tin. Vui lòng kiểm tra định dạng file.');
   }
 
+  // Process retaken courses
+  processRetakenCourses(semesters);
+
   return { semesters };
 }
 
@@ -126,6 +129,7 @@ function parseCourseRow(cells: NodeListOf<Element>, semesterId: string, courseIn
       letterGrade,
       included: hasGrade, // Only include in GPA if has grade
       hasGrade, // Track if course has grade
+      isRetakeDisabled: false, // Will be set later when processing retakes
     };
     
     return course;
@@ -162,6 +166,60 @@ function normalizeLetterGrade(gradeText: string): LetterGrade {
   if (grade === 'R' || grade === 'P') return '';
   
   return '';
+}
+
+/**
+ * Process retaken courses to disable lower grades
+ * When a course is retaken, only the highest grade counts
+ */
+function processRetakenCourses(semesters: Semester[]): void {
+  // Collect all courses across all semesters
+  const allCourses: Course[] = [];
+  semesters.forEach(semester => {
+    allCourses.push(...semester.courses);
+  });
+
+  // Group courses by name (case-insensitive)
+  const coursesByName = new Map<string, Course[]>();
+  allCourses.forEach(course => {
+    const normalizedName = course.name.toLowerCase().trim();
+    if (!coursesByName.has(normalizedName)) {
+      coursesByName.set(normalizedName, []);
+    }
+    coursesByName.get(normalizedName)!.push(course);
+  });
+
+  // Process each group of courses with the same name
+  coursesByName.forEach(courses => {
+    // Only process if there are multiple instances (retakes)
+    if (courses.length > 1) {
+      // Filter courses with grades
+      const coursesWithGrades = courses.filter(c => c.hasGrade);
+      
+      if (coursesWithGrades.length > 0) {
+        // Find the highest grade point
+        const gradePoints = { 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'F': 0, '': -1 };
+        let highestGradePoint = -1;
+        let highestGradeCourse: Course | null = null;
+
+        coursesWithGrades.forEach(course => {
+          const gradePoint = gradePoints[course.letterGrade];
+          if (gradePoint > highestGradePoint) {
+            highestGradePoint = gradePoint;
+            highestGradeCourse = course;
+          }
+        });
+
+        // Disable all other instances (lower grades)
+        courses.forEach(course => {
+          if (course !== highestGradeCourse && course.hasGrade) {
+            course.isRetakeDisabled = true;
+            course.included = false; // Exclude from GPA calculation
+          }
+        });
+      }
+    }
+  });
 }
 
 /**
