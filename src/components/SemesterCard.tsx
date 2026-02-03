@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { Semester, LetterGrade, CourseEdit } from '../types';
+import { calculateSemesterGpa } from '../utils/gpaCalculator';
 import CourseRow from './CourseRow';
 
 interface SemesterCardProps {
@@ -60,6 +61,15 @@ export default function SemesterCard({
     return displayCourses.reduce((sum, course) => sum + course.credits, 0);
   }, [displayCourses]);
 
+  // Calculate semester GPA based on current display courses
+  const semesterGpa = useMemo(() => {
+    const semesterWithDisplayCourses = {
+      ...semester,
+      courses: displayCourses,
+    };
+    return calculateSemesterGpa(semesterWithDisplayCourses);
+  }, [semester, displayCourses]);
+
   const containerClassName = useMemo(() => {
     if (allSelected) {
       return 'group flex flex-col rounded-xl border-2 border-primary/30 bg-white shadow-sm overflow-hidden ring-2 ring-primary/5';
@@ -106,15 +116,22 @@ export default function SemesterCard({
               {semester.name}
             </h3>
           </div>
-          <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-            allSelected 
-              ? 'bg-primary/10 text-primary ring-primary/20' 
-              : someSelected
-              ? 'bg-primary/5 text-primary/80 ring-primary/10'
-              : 'bg-gray-100 text-gray-600 ring-gray-500/10'
-          }`}>
-            {totalCredits} Tín chỉ
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+              allSelected 
+                ? 'bg-primary/10 text-primary ring-primary/20' 
+                : someSelected
+                ? 'bg-primary/5 text-primary/80 ring-primary/10'
+                : 'bg-gray-100 text-gray-600 ring-gray-500/10'
+            }`}>
+              {totalCredits} Tín chỉ
+            </span>
+            {semesterGpa.totalCourses > 0 && (
+              <span className="inline-flex items-center rounded-md px-3 py-1 text-xs font-bold bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                GPA: {semesterGpa.gpa.toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 text-text-secondary">
           <span className="text-sm font-medium">
