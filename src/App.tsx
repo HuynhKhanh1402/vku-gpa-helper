@@ -53,6 +53,8 @@ function App() {
           ...course,
           letterGrade: edit.newLetterGrade,
           included: edit.newIncluded,
+          // If a grade has been set (not empty), mark hasGrade as true
+          hasGrade: edit.newLetterGrade !== '' ? true : course.hasGrade,
         };
       }),
     }));
@@ -82,6 +84,8 @@ function App() {
         newEdits.set(courseId, {
           ...existingEdit,
           newLetterGrade: newGrade,
+          // Auto-enable included when setting a grade for a course
+          newIncluded: newGrade !== '' ? true : existingEdit.newIncluded,
         });
       } else {
         // Create new edit - find the original course
@@ -95,7 +99,8 @@ function App() {
             oldLetterGrade: originalCourse.letterGrade,
             newLetterGrade: newGrade,
             oldIncluded: originalCourse.included,
-            newIncluded: originalCourse.included,
+            // Auto-enable included when setting a grade (especially for courses without grades)
+            newIncluded: newGrade !== '' ? true : originalCourse.included,
           });
         }
       }
